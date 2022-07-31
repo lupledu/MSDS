@@ -1,0 +1,75 @@
+---
+title: "MYFirstRmd"
+author: "Luis P"
+date: '2022-06-18'
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+---
+
+```{r, include=FALSE}
+#load libraries
+library(tidyverse)
+library(lubridate)
+library(plyr)
+library(dplyr)
+library(ggplot2)
+
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## IMPORT AND SUMMARY
+
+First, I'll import and summarize the data like this:
+
+```{r}
+NYPDShot <- read_csv(file = "NYPDShot.csv")
+summary(NYPDShot)
+```
+
+We're going to check the shooting data by month and by Precinct, so I'll delete everything else.
+We'll also need to change the date data to a standard date format and find just the month
+```{r}
+DateBoro = subset(NYPDShot, select = c(OCCUR_DATE,PRECINCT))
+DateBoro$Month <- mdy(DateBoro$OCCUR_DATE)
+DateBoro$Month <- month(DateBoro$Month)
+summary(DateBoro)
+```
+
+Next, we're going to count the total shootings by month and by precinct
+```{r}
+MonthFreq <-count(DateBoro, 'Month')
+PrecFreq <- count(DateBoro, 'PRECINCT')
+summary(MonthFreq)
+summary(PrecFreq)
+```
+
+## PLOT
+Next, We're going to plot the data accordingly
+```{r}
+ barplot(MonthFreq$freq, main="Shootings By Month", xlab="Month", ylab="# of Shootings", names.arg = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+ barplot(PrecFreq$freq, PrecFreq$PRECINCT, main="Shootings By Precinct", xlab="Precinct", ylab="# of Shootings",names.arg = c(PrecFreq$PRECINCT))
+```
+
+Next, we'd like to see if the shooting data correlates with juvenile arrest rates. First, We'll load the data:
+```{r}
+JUVARREST <- read_csv(file = "JuvArrests.csv")
+summary(JUVARREST)
+barplot(JUVARREST$Rate, main="Juvenile Probationers Rearrested As A Percentage Of NYPD Arrest", xlab="Month", ylab="# of Shootings", names.arg = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+```
+
+## MODEL
+Next, wecompare if there's a linear relationship between number of shootings and the arrest rate:
+```{r}
+mod <- lm(MonthFreq$freq~JUVARREST$Rate)
+summary(mod)
+```
+
+In this case, the low r-squared value clearly indicates that there's no relationship between the two.
+
+##BIAS
+There may be inherent biases and issues with the dataset that may affect the quality of the data. For shooting cases, there may be larger tourist populations during the summer months. Juvenile probationers may also have police oversight in a more carefull manner that may stabilize enforcement rates.
